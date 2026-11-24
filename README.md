@@ -957,6 +957,9 @@ ReVanced, Morphe, and Reseam patch repositories and related integrations.
 - [![inotia00-arsclib](https://img.shields.io/github/last-commit/inotia00/revanced-patches-arsclib?label=inotia00--arsclib&logo=github)](https://github.com/inotia00/revanced-patches-arsclib) ![Archived](https://img.shields.io/badge/status-archived-red)
 - [![IndusAryan](https://img.shields.io/github/last-commit/IndusAryan/twitter-patches?label=IndusAryan&logo=github)](https://github.com/IndusAryan/twitter-patches) ![Archived](https://img.shields.io/badge/status-archived-red)
 
+<!-- patch-registry:start -->
+<!-- patch-registry:end -->
+
 ## 🔨 Projects
 
 Managers, patching tools, plugin ecosystems, and adjacent ReVanced, Morphe, and Reseam projects.

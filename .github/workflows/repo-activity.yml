@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "0 6 * * *"
 
+concurrency:
+  group: readme-updates-${{ github.ref }}
+  queue: max
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
@@ -13,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - name: Setup Python
         uses: actions/setup-python@v5
         with:

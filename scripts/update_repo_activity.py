@@ -31,17 +31,24 @@ STATUS_BADGE_RE = re.compile(
 TOP_LEVEL_BULLET_RE = re.compile(r"^-\s+")
 SECTION_KEYWORDS = ("official", "patches", "resources", "projects", "builder")
 STATUS_ORDER = ("active", "partially", "inactive", "archived")
+DEFAULT_ACTIVE_DAYS = 120
+DEFAULT_PARTIALLY_DAYS = 240
+PATCH_REGISTRY_START = "<!-- patch-registry:start -->"
+PATCH_REGISTRY_END = "<!-- patch-registry:end -->"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--readme", default="README.md", help="Path to the markdown file to update")
     parser.add_argument("--dry-run", action="store_true", help="Only print changes without writing the file")
-    parser.add_argument("--active-days", type=int, default=120, help="Days since last push to keep repo Active")
+    parser.add_argument(
+        "--active-days", type=int, default=DEFAULT_ACTIVE_DAYS,
+        help="Days since last push to keep repo Active",
+    )
     parser.add_argument(
         "--partially-days",
         type=int,
-        default=240,
+        default=DEFAULT_PARTIALLY_DAYS,
         help="Days since last push to keep repo Partially maintained",
     )
     parser.add_argument(
@@ -100,9 +107,12 @@ def classify_repo(metadata: dict, now: dt.datetime, active_days: int, partially_
         pushed = None
         if pushed_at:
             try:
-                pushed = dt.datetime.strptime(pushed_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=dt.timezone.utc)
-            except ValueError:
+                pushed = dt.datetime.fromisoformat(pushed_at)
+                if pushed.tzinfo is None:
+                    raise ValueError("missing timezone")
+            except (TypeError, ValueError):
                 logging.warning("Unexpected pushed_at for %s: %s", slug, pushed_at)
+                pushed = None
         if pushed is None:
             status = "inactive"
         else:
@@ -165,15 +175,32 @@ def should_reorder_section(heading_line: str) -> bool:
 
 
 def reorder_section_lines(body_lines: list[str]) -> list[str]:
+    if PATCH_REGISTRY_START in body_lines and PATCH_REGISTRY_END in body_lines:
+        start = body_lines.index(PATCH_REGISTRY_START)
+        end = body_lines.index(PATCH_REGISTRY_END)
+        if start < end:
+            return (
+                reorder_bullet_blocks(body_lines[:start])
+                + [body_lines[start]]
+                + reorder_bullet_blocks(body_lines[start + 1:end])
+                + body_lines[end:]
+            )
+    return reorder_bullet_blocks(body_lines)
+
+
+def reorder_bullet_blocks(body_lines: list[str]) -> list[str]:
+    end = len(body_lines)
+    while end > 0 and not body_lines[end - 1].strip():
+        end -= 1
     blocks = []
     block_ranges = []
     i = 0
-    while i < len(body_lines):
+    while i < end:
         line = body_lines[i]
         if TOP_LEVEL_BULLET_RE.match(line):
             start = i
             j = i + 1
-            while j < len(body_lines):
+            while j < end:
                 if TOP_LEVEL_BULLET_RE.match(body_lines[j]):
                     break
                 if body_lines[j].startswith("## "):
