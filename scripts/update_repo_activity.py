@@ -33,8 +33,6 @@ SECTION_KEYWORDS = ("official", "patches", "resources", "projects", "builder")
 STATUS_ORDER = ("active", "partially", "inactive", "archived")
 DEFAULT_ACTIVE_DAYS = 120
 DEFAULT_PARTIALLY_DAYS = 240
-PATCH_REGISTRY_START = "<!-- patch-registry:start -->"
-PATCH_REGISTRY_END = "<!-- patch-registry:end -->"
 
 
 def parse_args() -> argparse.Namespace:
@@ -175,20 +173,6 @@ def should_reorder_section(heading_line: str) -> bool:
 
 
 def reorder_section_lines(body_lines: list[str]) -> list[str]:
-    if PATCH_REGISTRY_START in body_lines and PATCH_REGISTRY_END in body_lines:
-        start = body_lines.index(PATCH_REGISTRY_START)
-        end = body_lines.index(PATCH_REGISTRY_END)
-        if start < end:
-            return (
-                reorder_bullet_blocks(body_lines[:start])
-                + [body_lines[start]]
-                + reorder_bullet_blocks(body_lines[start + 1:end])
-                + body_lines[end:]
-            )
-    return reorder_bullet_blocks(body_lines)
-
-
-def reorder_bullet_blocks(body_lines: list[str]) -> list[str]:
     end = len(body_lines)
     while end > 0 and not body_lines[end - 1].strip():
         end -= 1
